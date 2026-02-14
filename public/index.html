@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebAuthn / Passkey Demo</title>
+  <script src="https://unpkg.com/@simplewebauthn/browser@13/dist/bundle/index.umd.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      color: #666;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      color: #333;
+      margin-bottom: 8px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-secondary {
+      background: #764ba2;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #63408a;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
+    }
+
+    .btn-secondary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-protected {
+      background: #4caf50;
+      color: white;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .btn-protected:hover {
+      background: #45a049;
+    }
+
+    .alert {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .alert-error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .response-box {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 15px;
+      margin-top: 20px;
+      font-size: 12px;
+      color: #333;
+      font-family: 'Courier New', monospace;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .status {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #667eea;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    #protectedSection {
+      display: none;
+    }
+
+    .divider {
+      border: none;
+      border-top: 2px solid #e0e0e0;
+      margin: 30px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 WebAuthn Demo</h1>
+    <p class="subtitle">Passwordless Authentication with Passkeys</p>
+
+    <!-- Alerts -->
+    <div id="alertBox"></div>
+
+    <!-- Registration Section -->
+    <div id="authSection">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input 
+          type="text" 
+          id="username" 
+          placeholder="Enter your username" 
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="button-group">
+        <button class="btn-primary" onclick="registerPasskey()">
+          📱 Register Passkey
+        </button>
+        <button class="btn-secondary" onclick="loginPasskey()">
+          🔓 Login
+        </button>
+      </div>
+
+      <hr class="divider">
+
+      <div class="form-group">
+        <label>Instructions:</label>
+        <ol style="margin-left: 20px; font-size: 13px; color: #666; line-height: 1.6;">
+          <li>Enter a username</li>
+          <li>Click "Register Passkey" and use your fingerprint/face/security key</li>
+          <li>Click "Login" and authenticate again</li>
+          <li>Call the protected endpoint to verify authentication</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Protected Section (after login) -->
+    <div id="protectedSection">
+      <h2 style="color: #4caf50; margin-bottom: 20px;">✓ Logged In!</h2>
+      <button class="btn-protected" onclick="callProtectedEndpoint()">
+        📊 Call Protected Endpoint
+      </button>
+      <button class="btn-secondary" style="width: 100%; margin-top: 10px;" onclick="logout()">
+        Logout
+      </button>
+    </div>
+
+    <!-- Response Display -->
+    <div id="responseBox" class="response-box" style="display: none;">
+      <strong>Response:</strong>
+      <pre id="response" style="margin-top: 10px;"></pre>
+    </div>
+
+    <!-- Status -->
+    <div class="status">
+      <p>Check browser console (F12) for detailed logs</p>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api';
+    let sessionToken = null;
+
+    // ============================================
+    // Helper: Show Alert
+    // ============================================
+    function showAlert(message, type = 'info') {
+      const alertBox = document.getElementById('alertBox');
+      const alertDiv = document.createElement('div');
+      alertDiv.className = `alert alert-${type}`;
+      alertDiv.textContent = message;
+      alertBox.innerHTML = '';
+      alertBox.appendChild(alertDiv);
+
+      setTimeout(() => {
+        alertDiv.remove();
+      }, 5000);
+    }
+
+    // ============================================
+    // Helper: Show Response
+    // ============================================
+    function showResponse(data) {
+      const responseBox = document.getElementById('responseBox');
+      const responseText = document.getElementById('response');
+      responseBox.style.display = 'block';
+      responseText.textContent = JSON.stringify(data, null, 2);
+    }
+
+    // ============================================
+    // STEP 1: Register Passkey
+    // ============================================
+    async function registerPasskey() {
+      const username = document.getElementById('username').value.trim();
+
+      if (!username) {
+        showAlert('⚠️ Please enter a username', 'error');
+        return;
+      }
+
+      try {
+        console.log('📝 Starting registration for user:', username);
+
+        // Step 1: Request registration options from server
+        console.log('  → Requesting registration options...');
+        const optionsRes = await fetch(`${API_URL}/register/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+        });
+
+        if (!optionsRes.ok) {
+          const error = await optionsRes.json();
+          throw new Error(error.error || 'Failed to get registration options');
+        }
+
+        const options = await optionsRes.json();
+        console.log('  ✓ Received registration options with challenge');
+        console.log('    Challenge:', options.challenge);
+
+        // Step 2: User authenticates with passkey (fingerprint/face/security key)
+        console.log('  → Waiting for user to authenticate with passkey...');
+        const response = await SimpleWebAuthnBrowser.startRegistration(options);
+        console.log('  ✓ User authenticated, received response');
+        console.log('    Response ID:', response.id);
+
+        // Step 3: Send response to server for verification
+        console.log('  → Sending response to server for verification...');
+        const verifyRes = await fetch(`${API_URL}/register/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, response }),
+        });
+
+        if (!verifyRes.ok) {
+          const error = await verifyRes.json();
+          throw new Error(error.error || 'Verification failed');
+        }
+
+        const result = await verifyRes.json();
+        console.log('  ✓ Verification successful!');
+        console.log('✅ Passkey registered successfully');
+
+        showAlert('✅ Passkey registered! Now you can login.', 'success');
+        showResponse(result);
+
+      } catch (error) {
+        console.error('❌ Registration failed:', error);
+        showAlert('❌ Registration failed: ' + error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // STEP 2: Login with Passkey
+    // ============================================
+    async function loginPasskey() {
+      const username = document.getElementById('username').value.trim();
+
+      if (!username) {
+        showAlert('⚠️ Please enter a username', 'error');
+        return;
+      }
+
+      try {
+        console.log('🔓 Starting login for user:', username);
+
+        // Step 1: Request login options from server
+        console.log('  → Requesting login options...');
+        const optionsRes = await fetch(`${API_URL}/login/options`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username }),
+        });
+
+        if (!optionsRes.ok) {
+          const error = await optionsRes.json();
+          throw new Error(error.error || 'Failed to get login options');
+        }
+
+        const options = await optionsRes.json();
+        console.log('  ✓ Received login options with challenge');
+        console.log('    Challenge:', options.challenge);
+
+        // Step 2: User authenticates with passkey
+        console.log('  → Waiting for user to authenticate with passkey...');
+        const response = await SimpleWebAuthnBrowser.startAuthentication(options);
+        console.log('  ✓ User authenticated, received response');
+        console.log('    Response ID:', response.id);
+
+        // Step 3: Send response to server for verification
+        console.log('  → Sending response to server for verification...');
+        const verifyRes = await fetch(`${API_URL}/login/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, response }),
+        });
+
+        if (!verifyRes.ok) {
+          const error = await verifyRes.json();
+          throw new Error(error.error || 'Authentication failed');
+        }
+
+        const result = await verifyRes.json();
+        console.log('  ✓ Verification successful!');
+        console.log('✅ Login successful');
+
+        // Store token
+        sessionToken = result.token;
+
+        // Update UI
+        document.getElementById('authSection').style.display = 'none';
+        document.getElementById('protectedSection').style.display = 'block';
+
+        showAlert('✅ You are now logged in!', 'success');
+        showResponse(result);
+
+      } catch (error) {
+        console.error('❌ Login failed:', error);
+        showAlert('❌ Login failed: ' + error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // STEP 3: Call Protected Endpoint
+    // ============================================
+    async function callProtectedEndpoint() {
+      if (!sessionToken) {
+        showAlert('⚠️ No session token. Please login first.', 'error');
+        return;
+      }
+
+      try {
+        console.log('🔐 Calling protected endpoint with token...');
+        console.log('    Token:', sessionToken.substring(0, 20) + '...');
+
+        const res = await fetch(`${API_URL}/me`, {
+          headers: { 'Authorization': `Bearer ${sessionToken}` },
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to access protected endpoint');
+        }
+
+        const data = await res.json();
+        console.log('  ✓ Protected endpoint returned:', data);
+        console.log('✅ Authentication verified!');
+
+        showAlert('✅ Successfully accessed protected endpoint!', 'success');
+        showResponse(data);
+
+      } catch (error) {
+        console.error('❌ Protected endpoint call failed:', error);
+        showAlert('❌ Error: ' + error.message, 'error');
+      }
+    }
+
+    // ============================================
+    // Logout
+    // ============================================
+    function logout() {
+      sessionToken = null;
+      document.getElementById('authSection').style.display = 'block';
+      document.getElementById('protectedSection').style.display = 'none';
+      document.getElementById('responseBox').style.display = 'none';
+      document.getElementById('username').value = '';
+      showAlert('✓ Logged out', 'info');
+      console.log('Logged out');
+    }
+  </script>
+</body>
+</html>
