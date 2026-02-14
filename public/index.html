@@ -274,9 +274,9 @@
     const API_URL = 'http://localhost:3000/api';
     let sessionToken = null;
 
-    // ============================================
+ 
     // Helper: Show Alert
-    // ============================================
+ 
     function showAlert(message, type = 'info') {
       const alertBox = document.getElementById('alertBox');
       const alertDiv = document.createElement('div');
@@ -290,9 +290,9 @@
       }, 5000);
     }
 
-    // ============================================
+ 
     // Helper: Show Response
-    // ============================================
+ 
     function showResponse(data) {
       const responseBox = document.getElementById('responseBox');
       const responseText = document.getElementById('response');
@@ -300,9 +300,9 @@
       responseText.textContent = JSON.stringify(data, null, 2);
     }
 
-    // ============================================
-    // STEP 1: Register Passkey
-    // ============================================
+ 
+    //Register Passkey
+ 
     async function registerPasskey() {
       const username = document.getElementById('username').value.trim();
 
@@ -314,7 +314,7 @@
       try {
         console.log('📝 Starting registration for user:', username);
 
-        // Step 1: Request registration options from server
+        //Request registration options from server
         console.log('  → Requesting registration options...');
         const optionsRes = await fetch(`${API_URL}/register/options`, {
           method: 'POST',
@@ -331,13 +331,13 @@
         console.log('  ✓ Received registration options with challenge');
         console.log('    Challenge:', options.challenge);
 
-        // Step 2: User authenticates with passkey (fingerprint/face/security key)
+        //User authenticates with passkey (fingerprint/face/security key)
         console.log('  → Waiting for user to authenticate with passkey...');
         const response = await SimpleWebAuthnBrowser.startRegistration(options);
         console.log('  ✓ User authenticated, received response');
         console.log('    Response ID:', response.id);
 
-        // Step 3: Send response to server for verification
+        //Send response to server for verification
         console.log('  → Sending response to server for verification...');
         const verifyRes = await fetch(`${API_URL}/register/verify`, {
           method: 'POST',
@@ -363,9 +363,9 @@
       }
     }
 
-    // ============================================
-    // STEP 2: Login with Passkey
-    // ============================================
+ 
+    //Login with Passkey
+ 
     async function loginPasskey() {
       const username = document.getElementById('username').value.trim();
 
@@ -377,7 +377,7 @@
       try {
         console.log('🔓 Starting login for user:', username);
 
-        // Step 1: Request login options from server
+        //Request login options from server
         console.log('  → Requesting login options...');
         const optionsRes = await fetch(`${API_URL}/login/options`, {
           method: 'POST',
@@ -394,13 +394,13 @@
         console.log('  ✓ Received login options with challenge');
         console.log('    Challenge:', options.challenge);
 
-        // Step 2: User authenticates with passkey
+        //User authenticates with passkey
         console.log('  → Waiting for user to authenticate with passkey...');
         const response = await SimpleWebAuthnBrowser.startAuthentication(options);
         console.log('  ✓ User authenticated, received response');
         console.log('    Response ID:', response.id);
 
-        // Step 3: Send response to server for verification
+        //Send response to server for verification
         console.log('  → Sending response to server for verification...');
         const verifyRes = await fetch(`${API_URL}/login/verify`, {
           method: 'POST',
@@ -433,9 +433,9 @@
       }
     }
 
-    // ============================================
-    // STEP 3: Call Protected Endpoint
-    // ============================================
+ 
+    //Call Protected Endpoint
+ 
     async function callProtectedEndpoint() {
       if (!sessionToken) {
         showAlert('⚠️ No session token. Please login first.', 'error');
@@ -468,9 +468,9 @@
       }
     }
 
-    // ============================================
+ 
     // Logout
-    // ============================================
+ 
     function logout() {
       sessionToken = null;
       document.getElementById('authSection').style.display = 'block';
